@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自分マーケマップ — ワークシート</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:        #0F6E56;
+    --teal-light:  #E1F5EE;
+    --teal-mid:    #1D9E75;
+    --blue:        #185FA5;
+    --blue-light:  #E6F1FB;
+    --coral:       #D85A30;
+    --coral-light: #FAECE7;
+    --gray-bg:     #F1EFE8;
+    --gray-line:   #D3D1C7;
+    --gray-text:   #5F5E5A;
+    --black:       #2C2C2A;
+    --white:       #ffffff;
+    --radius:      8px;
+    --radius-lg:   12px;
+  }
+
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #f5f4f0;
+    color: var(--black);
+    padding: 2rem 1rem;
+  }
+
+  .sheet {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--white);
+    border: 0.5px solid var(--gray-line);
+    border-radius: var(--radius-lg);
+    padding: 2rem 2.5rem;
+  }
+
+  .doc-title { font-size: 22px; font-weight: 700; color: var(--black); margin-bottom: 4px; }
+  .doc-sub   { font-size: 13px; color: var(--gray-text); margin-bottom: 1.5rem; }
+  hr.divider { border: none; border-top: 0.5px solid var(--gray-line); margin: 1.5rem 0; }
+
+  /* Step badge */
+  .step-badge {
+    display: flex;
+    align-items: stretch;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 0.5px solid var(--gray-line);
+    margin-bottom: 1rem;
+  }
+  .step-n {
+    background: var(--teal);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .step-title {
+    background: var(--teal-light);
+    color: var(--teal);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+
+  /* Cards / fields */
+  .card {
+    border: 0.5px solid var(--gray-line);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field-label { font-size: 12px; font-weight: 600; color: var(--black); margin-bottom: 4px; }
+  .hint { font-size: 11px; color: var(--gray-text); margin-top: 3px; font-style: italic; }
+  textarea, select {
+    width: 100%;
+    border: 0.5px solid var(--gray-line);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--black);
+    background: var(--white);
+    resize: vertical;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color .15s;
+  }
+  textarea:focus, select:focus { border-color: #888780; }
+  textarea { min-height: 52px; }
+
+  /* Cat headers */
+  .cat-header { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+  .cat-blue  { color: var(--blue); }
+  .cat-teal  { color: var(--teal); }
+
+  /* System grid */
+  .sys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .sys-card {
+    border: 0.5px solid var(--gray-line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    user-select: none;
+  }
+  .sys-card:hover { border-color: #888780; }
+  .sys-card.doing { border-color: var(--teal-mid); background: var(--teal-light); }
+  .sys-card.doing .sys-name { color: #085041; }
+  .sys-card.doing .sys-sub  { color: var(--teal); }
+  .sys-card.gap   { border-color: var(--coral); background: var(--coral-light); }
+  .sys-card.gap   .sys-name { color: #712B13; }
+  .sys-card.gap   .sys-sub  { color: var(--coral); }
+  .sys-card.later { border-color: #B4B2A9; background: var(--gray-bg); }
+  .sys-card.later .sys-name { color: #444441; }
+  .sys-card.later .sys-sub  { color: var(--gray-text); }
+  .sys-name { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 2px; }
+  .sys-sub  { font-size: 11px; color: var(--gray-text); margin-bottom: 6px; }
+  .sys-tag  {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--gray-bg);
+    color: var(--gray-text);
+  }
+  .sys-card.doing .sys-tag { background: #9FE1CB; color: #085041; }
+  .sys-card.gap   .sys-tag { background: #F0997B; color: #712B13; }
+  .sys-card.later .sys-tag { background: var(--gray-line); color: #444441; }
+
+  /* Summary */
+  .summary-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 1rem; }
+  .metric {
+    background: var(--gray-bg);
+    border-radius: var(--radius);
+    padding: .75rem 1rem;
+    text-align: center;
+  }
+  .metric-n { font-size: 24px; font-weight: 700; color: var(--black); }
+  .metric-l { font-size: 11px; color: var(--gray-text); margin-top: 2px; }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--gray-text); cursor: pointer;
+  }
+  .legend-item:hover { color: var(--black); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-doing  { background: var(--teal-mid); }
+  .dot-gap    { background: var(--coral); }
+  .dot-later  { background: #B4B2A9; }
+
+  /* Action area */
+  .action-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .action-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border: 0.5px solid var(--gray-line);
+    border-radius: var(--radius);
+    background: transparent;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--black);
+    cursor: pointer;
+    transition: background .15s;
+    text-decoration: none;
+  }
+  .action-btn:hover { background: var(--gray-bg); }
+
+  @media (max-width: 560px) {
+    .sheet { padding: 1.25rem 1rem; }
+    .row2, .sys-grid { grid-template-columns: 1fr; }
+    .summary-bar { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .sheet { border: none; border-radius: 0; padding: 1rem; max-width: 100%; }
+    .action-btn { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="doc-title">自分マーケマップ</p>
+  <p class="doc-sub">マーケ解剖ラボ｜個人事業主版 — セッション1ワークシート</p>
+  <hr class="divider">
+
+  <!-- STEP 1 -->
+  <div class="step-badge"><span class="step-n">STEP 1</span><span class="step-title">事業の基本情報</span></div>
+  <div class="card">
+    <div class="row2">
+      <div>
+        <div class="field-label">屋号 / 事業名</div>
+        <textarea rows="1" placeholder="例：フリーランスデザイナー田中"></textarea>
+      </div>
+      <div>
+        <div class="field-label">何を売っているか（一言で）</div>
+        <textarea rows="1" placeholder="例：中小企業向けロゴ・LP制作"></textarea>
+      </div>
+    </div>
+    <div class="row2">
+      <div>
+        <div class="field-label">主な顧客像</div>
+        <textarea rows="1" placeholder="例：従業員5〜30名の製造業"></textarea>
+      </div>
+      <div>
+        <div class="field-label">月商（おおよそ）</div>
+        <select>
+          <option value="">選択してください</option>
+          <option>0〜10万円</option>
+          <option>10〜30万円</option>
+          <option>30〜50万円</option>
+          <option>50〜100万円</option>
+          <option>100万円以上</option>
+        </select>
+        <div class="hint">現在地の確認用・評価はしません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-badge"><span class="step-n">STEP 2</span><span class="step-title">自分マーケマップ — 今どこにいるか</span></div>
+  <div class="card">
+    <p style="font-size:12px;color:var(--gray-text);margin-bottom:.75rem">各系統をクリックして状態を記録してください</p>
+    <div class="legend">
+      <div class="legend-item" onclick="setAll('doing')"><span class="legend-dot dot-doing"></span>やっている</div>
+      <div class="legend-item" onclick="setAll('gap')"><span class="legend-dot dot-gap"></span>穴（やれていない）</div>
+      <div class="legend-item" onclick="setAll('later')"><span class="legend-dot dot-later"></span>今は不要</div>
+    </div>
+
+    <div class="cat-header cat-blue">① ユーザー接点系</div>
+    <div class="sys-grid">
+      <div class="sys-card" data-key="brand" onclick="cycle(this)">
+        <div class="sys-name">ブランド系統</div>
+        <div class="sys-sub">世界観・認知を作る</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="promo" onclick="cycle(this)">
+        <div class="sys-name">プロモーション系統</div>
+        <div class="sys-sub">広告・キャンペーン</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="ec" onclick="cycle(this)">
+        <div class="sys-name">EC系統</div>
+        <div class="sys-sub">購買・転換率</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="crm" onclick="cycle(this)">
+        <div class="sys-name">CRM系統</div>
+        <div class="sys-sub">継続・LTV向上</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="digital" onclick="cycle(this)">
+        <div class="sys-name">デジタル系統</div>
+        <div class="sys-sub">SNS・SEO・LP</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+    </div>
+
+    <div class="cat-header cat-teal" style="margin-top:1rem">② 上流・戦略系</div>
+    <div class="sys-grid">
+      <div class="sys-card" data-key="strategy" onclick="cycle(this)">
+        <div class="sys-name">ストラテジー系統</div>
+        <div class="sys-sub">勝ち筋・事業設計</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="product" onclick="cycle(this)">
+        <div class="sys-name">プロダクト系統</div>
+        <div class="sys-sub">PMF・価値設計</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="tech" onclick="cycle(this)">
+        <div class="sys-name">テクノロジー系統</div>
+        <div class="sys-sub">MarTech・自動化</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+      <div class="sys-card" data-key="analytics" onclick="cycle(this)">
+        <div class="sys-name">アナリティクス系統</div>
+        <div class="sys-sub">数値から構造を解釈</div>
+        <span class="sys-tag">未記入</span>
+      </div>
+    </div>
+
+    <div class="summary-bar">
+      <div class="metric"><div class="metric-n" id="n-doing">0</div><div class="metric-l">やっている</div></div>
+      <div class="metric"><div class="metric-n" id="n-gap">0</div><div class="metric-l">穴</div></div>
+      <div class="metric"><div class="metric-n" id="n-later">0</div><div class="metric-l">今は不要</div></div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-badge"><span class="step-n">STEP 3</span><span class="step-title">穴の深掘り</span></div>
+  <div class="card">
+    <div class="field-label">「穴」のうち、今一番売上に影響していると思う系統はどれ？理由も書いてみましょう</div>
+    <div class="hint" style="margin-bottom:6px">直感でOK。理由も書くと診断しやすい</div>
+    <textarea rows="3" placeholder="例：CRM系統。既存客への再提案が全くできていない。"></textarea>
+    <hr class="divider">
+    <div class="field-label">なぜそこが穴になっていると思いますか？</div>
+    <div class="hint" style="margin-bottom:6px">例：やり方がわからない／時間がない／後回しにしていた</div>
+    <textarea rows="3" placeholder=""></textarea>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step-badge"><span class="step-n">STEP 4</span><span class="step-title">自分でやるか・外すか・後回しか</span></div>
+  <div class="card">
+    <p style="font-size:12px;color:var(--gray-text);margin-bottom:.75rem">穴と感じた系統について、今後どうするか考えてみましょう</p>
+    <div class="row2">
+      <div>
+        <div class="field-label">自分でやる（得意 or 学べる）</div>
+        <textarea rows="3" placeholder="例：デジタル系統のSNS投稿は自分でやれそう"></textarea>
+      </div>
+      <div>
+        <div class="field-label">外注・ツールに任せる</div>
+        <textarea rows="3" placeholder="例：LP制作はデザイナーに頼む、メルマガはツール化"></textarea>
+      </div>
+    </div>
+    <div class="field-label">今は手をつけない（理由も）</div>
+    <textarea rows="2" placeholder="例：EC系統は今の売上規模だと不要。月商100万超えたら検討"></textarea>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step-badge"><span class="step-n">STEP 5</span><span class="step-title">今月のアクション宣言</span></div>
+  <div class="card">
+    <p style="font-size:12px;color:var(--gray-text);margin-bottom:.75rem">1つだけ。具体的に書くほど実行率が上がります。</p>
+    <div class="field-label">今月やること</div>
+    <textarea rows="2" placeholder="例：来月末までにメルマガ配信を月2回の仕組みを作る"></textarea>
+    <hr class="divider">
+    <div class="action-row">
+      <div class="field-label" style="margin:0">グループに共有するメモ（任意）</div>
+    </div>
+    <textarea rows="3" placeholder="気づいたこと・迷っていること・グループに聞きたいことなど"></textarea>
+  </div>
+
+</div>
+
+<script>
+const states  = ['', 'doing', 'gap', 'later'];
+const labels  = { '': '未記入', doing: 'やっている', gap: '穴', later: '今は不要' };
+const cardState = {};
+
+function cycle(el) {
+  const key = el.dataset.key;
+  const cur  = cardState[key] || '';
+  const next = states[(states.indexOf(cur) + 1) % states.length];
+  cardState[key] = next;
+  el.className = 'sys-card' + (next ? ' ' + next : '');
+  el.querySelector('.sys-tag').textContent = labels[next];
+  updateSummary();
+}
+
+function setAll(state) {
+  document.querySelectorAll('.sys-card').forEach(el => {
+    cardState[el.dataset.key] = state;
+    el.className = 'sys-card ' + state;
+    el.querySelector('.sys-tag').textContent = labels[state];
+  });
+  updateSummary();
+}
+
+function updateSummary() {
+  const vals = Object.values(cardState);
+  document.getElementById('n-doing').textContent = vals.filter(v => v === 'doing').length;
+  document.getElementById('n-gap').textContent   = vals.filter(v => v === 'gap').length;
+  document.getElementById('n-later').textContent = vals.filter(v => v === 'later').length;
+}
+</script>
+</body>
+</html>
